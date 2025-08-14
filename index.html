@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>천라지망: 손끝의 구도자</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Myeongjo&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Nanum+Myeongjo&display=swap');
+        .font-nanum { font-family: 'Nanum Myeongjo', serif; }
+        .font-jua { font-family: 'Jua', sans-serif; }
         body {
             font-family: 'Nanum Myeongjo', serif;
             overflow: hidden;
@@ -32,6 +36,7 @@
         }
         #introModal {
             display: flex;
+            background-color: #111827; /* bg-gray-900 */
         }
         .modal-content {
             background-color: #fdfaf4;
@@ -72,7 +77,7 @@
 </head>
 <body class="bg-gray-900 flex flex-col justify-center items-center h-screen m-0 p-0">
 
-    <div id="ui" class="w-full max-w-4xl p-4 text-center text-white bg-[#3a3a3a] rounded-b-lg">
+    <div id="ui" class="w-full max-w-4xl p-4 text-center text-white bg-[#3a3a3a] rounded-b-lg" style="display: none;">
         <h1 class="text-2xl md:text-3xl font-bold text-[#e0dcd1]">천라지망 (天羅地網)</h1>
         <div class="grid grid-cols-3 gap-2 mt-2 text-sm md:text-base text-[#c7c0b4]">
             <p>수련 단계: <span id="level">1</span></p>
@@ -81,21 +86,51 @@
         </div>
     </div>
 
-    <div class="w-full max-w-4xl aspect-video bg-white shadow-2xl">
+    <div id="gameContainer" class="w-full max-w-4xl aspect-video bg-white shadow-2xl" style="display: none;">
         <canvas id="gameCanvas"></canvas>
     </div>
 
     <div id="introModal" class="modal">
-        <div class="modal-content">
-            <h2 class="text-2xl font-bold mb-4 text-[#3a3a3a]">수련을 시작하기 전에</h2>
-            <p>마음의 중심, 심원(心圓)에서부터 손길을 뻗으라.</p>
-            <p>궤적이 참새에 닿을 듯 가까워지면, 인연의 빛이 발하리라.</p>
-            <p>빛이 나는 순간 손을 놓으면, 인연의 실이 참새를 중심으로 이끌 것이다.</p>
-            <button id="startButton" class="modal-button">수련 시작</button>
+        <div class="flex flex-col justify-center items-center h-screen text-center p-4 w-full">
+            <div class="flex-grow flex flex-col justify-center items-center">
+                <h1 class="text-6xl font-bold text-gray-200 mb-4 font-nanum" style="text-shadow: 2px 2px 4px #000;">
+                    천라지망
+                </h1>
+                <p class="text-xl text-gray-400 mb-12 font-nanum">
+                    손끝으로 그리는 구도의 길
+                </p>
+                <button id="startButton" class="bg-[#8c7b75] hover:bg-[#6b5b56] text-white font-bold py-3 px-8 rounded-full text-2xl shadow-lg transform hover:scale-105 transition-transform duration-300">
+                    수련 시작
+                </button>
+            </div>
+            <div class="pb-8">
+                <div id="logo-container" class="mb-2 w-24 h-24 mx-auto">
+                    <!-- JavaScript will insert the SVG logo here -->
+                </div>
+                <h2 class="text-2xl font-bold text-purple-300 font-jua" style="text-shadow: 1px 1px 2px #000;">
+                    포도 스튜디오
+                </h2>
+                <p class="text-sm text-gray-400 font-jua">
+                    세상에서 가장 달콤한 게임
+                </p>
+                <!-- NEW: Copyright notice -->
+                <p class="text-xs text-gray-500 mt-4 font-jua">
+                    © 2025 Podo Studio. All Rights Reserved.
+                </p>
+            </div>
         </div>
     </div>
     
-    <!-- NEW: Skill Unlock Modal -->
+    <div id="manualModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-2xl font-bold mb-4 text-[#3a3a3a]">수련의 기본</h2>
+            <p>마음의 중심, 심원(心圓)에서부터 손길을 뻗으라.</p>
+            <p>궤적이 참새에 닿을 듯 가까워지면, 인연의 빛이 발하리라.</p>
+            <p>빛이 나는 순간 손을 놓으면, 인연의 실이 참새를 중심으로 이끌 것이다.</p>
+            <button id="manualStartButton" class="modal-button">알겠습니다</button>
+        </div>
+    </div>
+
     <div id="skillModal" class="modal">
         <div class="modal-content">
             <h2 class="text-2xl font-bold mb-4 text-[#3a3a3a]">새로운 경지</h2>
@@ -117,6 +152,8 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        const ui = document.getElementById('ui');
+        const gameContainer = document.getElementById('gameContainer');
         const uiLevel = document.getElementById('level');
         const uiCaughtCount = document.getElementById('caughtCount');
         const uiTotalCount = document.getElementById('totalCount');
@@ -124,6 +161,8 @@
         
         const introModal = document.getElementById('introModal');
         const startButton = document.getElementById('startButton');
+        const manualModal = document.getElementById('manualModal');
+        const manualStartButton = document.getElementById('manualStartButton');
         const skillModal = document.getElementById('skillModal');
         const skillStartButton = document.getElementById('skillStartButton');
         const modal = document.getElementById('modal');
@@ -146,7 +185,7 @@
         let simwon;
 
         function resizeCanvas() {
-            const container = canvas.parentElement;
+            const container = gameContainer;
             canvas.width = container.clientWidth;
             canvas.height = container.clientHeight;
             simwon = {
@@ -343,7 +382,6 @@
                 modalTitle.textContent = '수련 성공'; modalMessage.textContent = `경지 ${level} : 망의 이치를 조금 깨달은 듯합니다.`;
                 modalButton.textContent = '다음 수련으로';
                 modalButton.onclick = () => {
-                    // MODIFIED: Check if it's time to show the skill modal
                     if (level === 5) {
                         modal.style.display = 'none';
                         skillModal.style.display = 'flex';
@@ -501,15 +539,67 @@
             isDrawing = false; currentDrawingPath = []; birds.forEach(b => b.isTargeted = false);
         }
 
+        function drawGrapeLogo() {
+            const logoContainer = document.getElementById('logo-container');
+            const svgNS = "http://www.w3.org/2000/svg";
+            const svg = document.createElementNS(svgNS, "svg");
+            svg.setAttribute("viewBox", "0 0 100 100");
+            svg.setAttribute("width", "100%");
+            svg.setAttribute("height", "100%");
+
+            const grapeColor = "#6d28d9";
+            const stemColor = "#22c55e";
+            const grapeRadius = 13;
+
+            const grapePositions = [
+                { cx: 30, cy: 40, hasBorder: false }, { cx: 70, cy: 40, hasBorder: false }, { cx: 50, cy: 84, hasBorder: false },
+                { cx: 60, cy: 62, hasBorder: true }, { cx: 40, cy: 62, hasBorder: true }, { cx: 50, cy: 40, hasBorder: true },
+            ];
+
+            grapePositions.forEach(pos => {
+                const circle = document.createElementNS(svgNS, "circle");
+                circle.setAttribute("cx", pos.cx);
+                circle.setAttribute("cy", pos.cy);
+                circle.setAttribute("r", grapeRadius);
+                circle.setAttribute("fill", grapeColor);
+                if (pos.hasBorder) {
+                    circle.setAttribute("stroke", "white");
+                    circle.setAttribute("stroke-width", "2.5");
+                }
+                svg.appendChild(circle);
+            });
+
+            const stem = document.createElementNS(svgNS, "line");
+            stem.setAttribute("x1", "50");
+            stem.setAttribute("y1", "27");
+            stem.setAttribute("x2", "50");
+            stem.setAttribute("y2", "20");
+            stem.setAttribute("stroke", stemColor);
+            stem.setAttribute("stroke-width", "5");
+            stem.setAttribute("stroke-linecap", "round");
+            svg.appendChild(stem);
+
+            logoContainer.innerHTML = '';
+            logoContainer.appendChild(svg);
+        }
+
         startButton.addEventListener('click', () => {
             introModal.style.display = 'none';
+            manualModal.style.display = 'flex';
+        });
+
+        manualStartButton.addEventListener('click', () => {
+            manualModal.style.display = 'none';
+            ui.style.display = 'block';
+            gameContainer.style.display = 'block';
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            resizeCanvas();
             setupLevel();
             gameLoop();
         });
 
         skillStartButton.addEventListener('click', () => {
-            level++; // Increment to level 6
+            level++;
             skillModal.style.display = 'none';
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
             setupLevel();
@@ -524,6 +614,7 @@
         window.addEventListener('touchend', handleEnd);
         window.addEventListener('resize', resizeCanvas);
 
+        drawGrapeLogo();
         resizeCanvas();
     </script>
 </body>
