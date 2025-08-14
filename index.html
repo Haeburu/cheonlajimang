@@ -79,10 +79,13 @@
 
     <div id="ui" class="w-full max-w-4xl p-4 text-center text-white bg-[#3a3a3a] rounded-b-lg" style="display: none;">
         <h1 class="text-2xl md:text-3xl font-bold text-[#e0dcd1]">천라지망 (天羅地網)</h1>
-        <div class="grid grid-cols-3 gap-2 mt-2 text-sm md:text-base text-[#c7c0b4]">
+        <div class="grid grid-cols-3 md:grid-cols-3 gap-2 mt-2 text-sm md:text-base text-[#c7c0b4]">
             <p>수련 단계: <span id="level">1</span></p>
             <p>포획된 참새: <span id="caughtCount">0</span> / <span id="totalCount">1</span></p>
-            <p class="text-yellow-300">남은 시간: <span id="timeLeft">60.0</span> 초</p>
+            <p class="text-yellow-300">남은 시간: <span id="timeLeft">60.0</span></p>
+            <p>누적 참새: <span id="totalCaughtStat">0</span></p>
+            <p class="text-blue-300">천라지망: <span id="skillCount">0</span></p>
+            <p class="text-amber-300">일망타진: <span id="perfectCount">0</span></p>
         </div>
     </div>
 
@@ -157,6 +160,9 @@
         const uiCaughtCount = document.getElementById('caughtCount');
         const uiTotalCount = document.getElementById('totalCount');
         const uiTimeLeft = document.getElementById('timeLeft');
+        const uiSkillCount = document.getElementById('skillCount');
+        const uiPerfectCount = document.getElementById('perfectCount');
+        const uiTotalCaughtStat = document.getElementById('totalCaughtStat');
         
         const introModal = document.getElementById('introModal');
         const startButton = document.getElementById('startButton');
@@ -174,6 +180,10 @@
         let levelTimer = 60;
         let animationFrameId;
         let settleTimer = 0;
+        
+        let cheonlajimangCount = 0;
+        let ilmangtajinCount = 0;
+        let totalCaughtCount = 0;
 
         let activeTethers = [];
         let isDrawing = false;
@@ -248,6 +258,8 @@
                             this.pathIndex--;
                             if (this.pathIndex < 0) {
                                 this.state = 'caught';
+                                totalCaughtCount++;
+                                saveStats();
                                 activeTethers = activeTethers.filter(t => t.id !== this.tether.id);
                                 this.tether = null;
                             }
@@ -286,6 +298,9 @@
             const caughtBirdCount = birds.filter(b => b.state === 'caught').length;
             uiLevel.textContent = level; uiCaughtCount.textContent = caughtBirdCount;
             uiTotalCount.textContent = birds.length; uiTimeLeft.textContent = levelTimer.toFixed(1);
+            uiSkillCount.textContent = cheonlajimangCount;
+            uiPerfectCount.textContent = ilmangtajinCount;
+            uiTotalCaughtStat.textContent = totalCaughtCount;
         }
 
         function drawSimwon() {
@@ -370,10 +385,7 @@
             if (levelTimer > 0) { levelTimer -= 1 / 60; } else { levelTimer = 0; }
             updateUI();
             if (birds.length > 0 && caughtCount === birds.length) { settleTimer += 1 / 60; } else { settleTimer = 0; }
-            if (settleTimer >= 2.0) { // MODIFIED: Changed to 2 seconds
-                showModal(true); 
-                return; 
-            }
+            if (settleTimer >= 2.0) { showModal(true); return; }
             if (levelTimer <= 0) { showModal(false); return; }
             animationFrameId = requestAnimationFrame(gameLoop);
         }
@@ -384,7 +396,8 @@
                 modalTitle.textContent = '수련 성공'; modalMessage.textContent = `경지 ${level} : 망의 이치를 조금 깨달은 듯합니다.`;
                 modalButton.textContent = '다음 수련으로';
                 modalButton.onclick = () => {
-                    if (level === 5) {
+                    // MODIFIED: Skill modal now shows up after level 2
+                    if (level === 2) {
                         modal.style.display = 'none';
                         skillModal.style.display = 'flex';
                     } else {
@@ -501,6 +514,8 @@
                     });
 
                     if (birdsToCatch.length > 0) {
+                        cheonlajimangCount++;
+                        totalCaughtCount += birdsToCatch.length;
                         let centerX = 0, centerY = 0;
                         loopPolygon.forEach(p => { centerX += p.x; centerY += p.y; });
                         centerX /= loopPolygon.length;
@@ -510,6 +525,7 @@
                         effects.push({ type: 'text', text: '천라지망', x: centerX, y: centerY - 30, endTime: Date.now() + 1200, duration: 1200 });
                         
                         if (birdsToCatch.length === birds.length) {
+                            ilmangtajinCount++;
                             effects.push({
                                 type: 'perfectClear',
                                 x: simwon.x, y: simwon.y,
@@ -524,6 +540,7 @@
                         }
                         
                         birdsToCatch.forEach(bird => bird.state = 'caught');
+                        saveStats();
                     }
                 }
 
@@ -584,6 +601,18 @@
             logoContainer.innerHTML = '';
             logoContainer.appendChild(svg);
         }
+        
+        function saveStats() {
+            localStorage.setItem('cheonlajimangCount', cheonlajimangCount);
+            localStorage.setItem('ilmangtajinCount', ilmangtajinCount);
+            localStorage.setItem('totalCaughtCount', totalCaughtCount);
+        }
+
+        function loadStats() {
+            cheonlajimangCount = parseInt(localStorage.getItem('cheonlajimangCount')) || 0;
+            ilmangtajinCount = parseInt(localStorage.getItem('ilmangtajinCount')) || 0;
+            totalCaughtCount = parseInt(localStorage.getItem('totalCaughtCount')) || 0;
+        }
 
         startButton.addEventListener('click', () => {
             introModal.style.display = 'none';
@@ -596,6 +625,7 @@
             gameContainer.style.display = 'block';
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
             resizeCanvas();
+            loadStats();
             setupLevel();
             gameLoop();
         });
