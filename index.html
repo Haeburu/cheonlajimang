@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>천라지망: 손끝의 구도자</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nanum+Myeongjo&display=swap');
+        body {
+            font-family: 'Nanum Myeongjo', serif;
+            overflow: hidden;
+            touch-action: none;
+        }
+        canvas {
+            background-image: url('https://www.transparenttextures.com/patterns/rice-paper-3.png');
+            background-color: #fdfaf4;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><defs><radialGradient id="softBrush" cx="0.5" cy="0.5" r="0.5"><stop offset="0%" stop-color="rgba(90, 90, 90, 0.8)" /><stop offset="100%" stop-color="rgba(90, 90, 90, 0)" /></radialGradient></defs><circle cx="16" cy="16" r="10" fill="url(%23softBrush)" /></svg>') 16 16, auto;
+            display: block;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fdfaf4;
+            padding: 30px;
+            border: 2px solid #8c7b75;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            max-width: 90%;
+            width: 400px;
+        }
+        .modal-button {
+            background-color: #8c7b75;
+            color: #fdfaf4;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+            margin-left: 5px;
+            margin-right: 5px;
+        }
+        .modal-button:hover {
+            background-color: #6b5b56;
+        }
+        .modal-button:disabled {
+            background-color: #a0938e;
+            cursor: not-allowed;
+        }
+        #teaching {
+            background-color: #f4f1e9;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 flex flex-col justify-center items-center h-screen m-0 p-0">
+
+    <div id="ui" class="w-full max-w-4xl p-4 text-center text-white bg-[#3a3a3a] rounded-b-lg">
+        <h1 class="text-2xl md:text-3xl font-bold text-[#e0dcd1]">천라지망 (天羅地網)</h1>
+        <div class="grid grid-cols-3 gap-2 mt-2 text-sm md:text-base text-[#c7c0b4]">
+            <p>수련 단계: <span id="level">1</span></p>
+            <p>포획된 참새: <span id="caughtCount">0</span> / <span id="totalCount">1</span></p>
+            <p class="text-yellow-300">남은 시간: <span id="timeLeft">60.0</span> 초</p>
+        </div>
+    </div>
+
+    <div class="w-full max-w-4xl aspect-video bg-white shadow-2xl">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle" class="text-2xl font-bold mb-4 text-[#3a3a3a]">수련 성공</h2>
+            <p id="modalMessage" class="text-base text-[#6b5b56]">망의 이치를 조금 깨달은 듯합니다.</p>
+            <p id="teaching" class="text-base text-center italic text-[#3a3a3a] my-4 p-4 border-t border-b border-gray-300 rounded-lg" style="display: none;"></p>
+            <div id="modalButtons">
+                 <button id="modalButton" class="modal-button">다음 수련으로</button>
+                 <button id="teachingButton" class="modal-button">✨ 스승의 가르침</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const uiLevel = document.getElementById('level');
+        const uiCaughtCount = document.getElementById('caughtCount');
+        const uiTotalCount = document.getElementById('totalCount');
+        const uiTimeLeft = document.getElementById('timeLeft');
+        
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalButton = document.getElementById('modalButton');
+        const teachingButton = document.getElementById('teachingButton');
+        const teachingText = document.getElementById('teaching');
+
+        let birds = [];
+        let level = 1;
+        let levelTimer = 60;
+        let animationFrameId;
+        let settleTimer = 0;
+
+        let activeTethers = [];
+        let isDrawing = false;
+        let currentDrawingPath = [];
+        let nextTetherId = 0;
+        let effects = [];
+
+        let simwon;
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            simwon = {
+                x: canvas.width / 2,
+                y: canvas.height / 2,
+                radius: Math.min(canvas.width, canvas.height) * 0.2
+            };
+            if (animationFrameId) {
+                if(animationFrameId) cancelAnimationFrame(animationFrameId);
+                setupLevel();
+                gameLoop();
+            }
+        }
+
+        class Bird {
+             constructor(x, y, level) {
+                this.x = x; this.y = y; this.radius = Math.max(8, 12 - level * 0.1);
+                const speedMultiplier = 1 + level * 0.1;
+                this.vx = (Math.random() - 0.5) * 2 * speedMultiplier;
+                this.vy = (Math.random() - 0.5) * 2 * speedMultiplier;
+                this.state = 'wandering'; this.wanderAngle = Math.random() * Math.PI * 2;
+                this.tether = null; this.pathIndex = 0; this.isTargeted = false;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                if (this.isTargeted) {
+                    ctx.fillStyle = 'rgba(144, 238, 144, 0.9)'; ctx.strokeStyle = 'rgba(50, 205, 50, 1)';
+                } else if (this.state === 'tethered') {
+                    ctx.fillStyle = 'rgba(255, 215, 0, 0.8)'; ctx.strokeStyle = 'rgba(218, 165, 32, 1)';
+                } else if (this.state === 'caught') {
+                    ctx.fillStyle = 'rgba(135, 206, 235, 0.8)'; ctx.strokeStyle = 'rgba(70, 130, 180, 1)';
+                } else {
+                    ctx.fillStyle = 'rgba(60, 60, 60, 0.8)'; ctx.strokeStyle = 'rgba(0, 0, 0, 1)';
+                }
+                ctx.fill(); ctx.lineWidth = 2; ctx.stroke();
+            }
+
+            update() {
+                switch(this.state) {
+                    case 'wandering':
+                        this.wanderAngle += (Math.random() - 0.5) * 0.5;
+                        this.vx += Math.cos(this.wanderAngle) * 0.1; this.vy += Math.sin(this.wanderAngle) * 0.1;
+                        this.x += this.vx; this.y += this.vy;
+                        if (this.x < this.radius) { this.vx *= -1; this.x = this.radius; }
+                        else if (this.x > canvas.width - this.radius) { this.vx *= -1; this.x = canvas.width - this.radius; }
+                        if (this.y < this.radius) { this.vy *= -1; this.y = this.radius; }
+                        else if (this.y > canvas.height - this.radius) { this.vy *= -1; this.y = canvas.height - this.radius; }
+                        const speed = Math.sqrt(this.vx**2 + this.vy**2);
+                        const maxSpeed = 1.5 + level * 0.15;
+                        if (speed > maxSpeed && speed > 0) {
+                            this.vx = (this.vx / speed) * maxSpeed; this.vy = (this.vy / speed) * maxSpeed;
+                        }
+                        break;
+                    case 'tethered':
+                        if (!this.tether || !this.tether.path || this.tether.path.length === 0) { this.state = 'wandering'; break; }
+                        const targetPoint = this.tether.path[this.pathIndex];
+                        const dx = targetPoint.x - this.x; const dy = targetPoint.y - this.y;
+                        const dist = Math.sqrt(dx**2 + dy**2);
+                        const pullSpeed = 2.5 + level * 0.1;
+                        if (dist < pullSpeed) {
+                            this.pathIndex--;
+                            if (this.pathIndex < 0) {
+                                this.state = 'caught';
+                                activeTethers = activeTethers.filter(t => t.id !== this.tether.id);
+                                this.tether = null;
+                            }
+                        } else {
+                            this.x += (dx / dist) * pullSpeed; this.y += (dy / dist) * pullSpeed;
+                        }
+                        break;
+                    case 'caught':
+                        const distToCenter = Math.sqrt((this.x - simwon.x)**2 + (this.y - simwon.y)**2);
+                        if (distToCenter > 1) {
+                           this.x += (simwon.x - this.x) * 0.1; this.y += (simwon.y - this.y) * 0.1;
+                        }
+                        break;
+                }
+                if (isNaN(this.x) || !isFinite(this.x)) {
+                    this.x = simwon.x; this.y = simwon.y; this.vx = 0; this.vy = 0; this.state = 'wandering';
+                    if (this.tether) {
+                        activeTethers = activeTethers.filter(t => t.id !== this.tether.id); this.tether = null;
+                    }
+                }
+            }
+        }
+
+        function setupLevel() {
+            birds = []; activeTethers = []; levelTimer = 60; settleTimer = 0;
+            for (let i = 0; i < level; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const radius = simwon.radius + Math.random() * (simwon.radius * 0.5) + 20;
+                const x = simwon.x + Math.cos(angle) * radius; const y = simwon.y + Math.sin(angle) * radius;
+                birds.push(new Bird(x, y, level));
+            }
+            updateUI();
+        }
+
+        function updateUI() {
+            const caughtBirdCount = birds.filter(b => b.state === 'caught').length;
+            uiLevel.textContent = level; uiCaughtCount.textContent = caughtBirdCount;
+            uiTotalCount.textContent = birds.length; uiTimeLeft.textContent = levelTimer.toFixed(1);
+        }
+
+        function drawSimwon() {
+            ctx.beginPath();
+            ctx.arc(simwon.x, simwon.y, simwon.radius, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(140, 123, 117, 0.2)'; ctx.fillStyle = 'rgba(135, 206, 235, 0.05)';
+            ctx.fill(); ctx.lineWidth = 2; ctx.stroke();
+        }
+        
+        function drawPaths() {
+            const drawSinglePath = (path, color) => {
+                 if (path.length < 1) return;
+                ctx.beginPath();
+                const firstPoint = path[0];
+                const angle = Math.atan2(firstPoint.y - simwon.y, firstPoint.x - simwon.x);
+                const startX = simwon.x + Math.cos(angle) * simwon.radius; const startY = simwon.y + Math.sin(angle) * simwon.radius;
+                ctx.moveTo(startX, startY);
+                for (let i = 0; i < path.length; i++) { ctx.lineTo(path[i].x, path[i].y); }
+                ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.stroke();
+            }
+            activeTethers.forEach(tether => { if (tether.path) drawSinglePath(tether.path, 'rgba(218, 165, 32, 0.7)'); });
+            if (isDrawing) { drawSinglePath(currentDrawingPath, 'rgba(0, 0, 0, 0.5)'); }
+        }
+
+        function drawEffects() {
+            const now = Date.now();
+            effects = effects.filter(effect => now < effect.endTime);
+            effects.forEach(effect => {
+                const timeRatio = (effect.endTime - now) / effect.duration;
+                const progress = 1 - timeRatio;
+                if (effect.type === 'polygon') {
+                    ctx.beginPath();
+                    ctx.moveTo(effect.polygon[0].x, effect.polygon[0].y);
+                    for(let i = 1; i < effect.polygon.length; i++) {
+                        ctx.lineTo(effect.polygon[i].x, effect.polygon[i].y);
+                    }
+                    ctx.closePath();
+                    ctx.fillStyle = `rgba(135, 206, 235, ${timeRatio * 0.4})`;
+                    ctx.fill();
+                    ctx.strokeStyle = `rgba(70, 130, 180, ${timeRatio * 0.8})`;
+                    ctx.lineWidth = 5;
+                    ctx.stroke();
+                } else if (effect.type === 'text') { // NEW: Text effect rendering
+                    const alpha = Math.sin(progress * Math.PI); // Fade in and out
+                    const fontSize = 40 + Math.sin(progress * Math.PI) * 15; // Pulse effect
+                    ctx.font = `bold ${fontSize}px 'Nanum Myeongjo'`;
+                    ctx.fillStyle = `rgba(60, 60, 60, ${alpha})`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(effect.text, effect.x, effect.y);
+                }
+            });
+        }
+
+        function gameLoop(timestamp) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawSimwon(); drawPaths(); drawEffects();
+            let caughtCount = 0;
+            birds.forEach(bird => { bird.update(); if (bird.state === 'caught') caughtCount++; bird.draw(); });
+            if (levelTimer > 0) { levelTimer -= 1 / 60; } else { levelTimer = 0; }
+            updateUI();
+            if (birds.length > 0 && caughtCount === birds.length) { settleTimer += 1 / 60; } else { settleTimer = 0; }
+            if (settleTimer >= 1.0) { showModal(true); return; }
+            if (levelTimer <= 0) { showModal(false); return; }
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        async function getMastersTeaching(currentLevel) { /* ... */ }
+        function showModal(isSuccess) {
+            modal.style.display = 'flex';
+            if (isSuccess) {
+                modalTitle.textContent = '수련 성공'; modalMessage.textContent = `경지 ${level} : 망의 이치를 조금 깨달은 듯합니다.`;
+                modalButton.textContent = '다음 수련으로'; teachingButton.style.display = 'inline-block';
+                teachingText.style.display = 'none'; teachingButton.disabled = false;
+                modalButton.onclick = () => {
+                    level++; modal.style.display = 'none';
+                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                    setupLevel(); gameLoop();
+                };
+                teachingButton.onclick = () => getMastersTeaching(level);
+            } else {
+                modalTitle.textContent = '수련 실패'; modalMessage.textContent = '시간 안에 모든 참새를 이끌지 못했습니다. 마음을 가다듬고 다시 도전하십시오.';
+                modalButton.textContent = '다시 도전'; teachingButton.style.display = 'none';
+                teachingText.style.display = 'none';
+                modalButton.onclick = () => {
+                    modal.style.display = 'none';
+                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                    setupLevel(); gameLoop();
+                };
+            }
+        }
+        
+        function getMousePos(evt) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+            const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+
+        function pointInPolygon(point, vs) {
+            let x = point.x, y = point.y;
+            let inside = false;
+            for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+                let xi = vs[i].x, yi = vs[i].y;
+                let xj = vs[j].x, yj = vs[j].y;
+                let intersect = ((yi > y) != (yj > y))
+                    && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        }
+        
+        function getLineIntersection(p1, p2, p3, p4) {
+            const d = (p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y);
+            if (d === 0) return null;
+            const t = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / d;
+            const u = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / d;
+            if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+                return { x: p1.x + t * (p2.x - p1.x), y: p1.y + t * (p2.y - p1.y) };
+            }
+            return null;
+        }
+
+        function handleStart(e) {
+            const pos = getMousePos(e);
+            const distToCenter = Math.sqrt((pos.x - simwon.x)**2 + (pos.y - simwon.y)**2);
+            if (distToCenter < simwon.radius) { isDrawing = true; currentDrawingPath = []; }
+        }
+
+        function handleMove(e) {
+            if (isDrawing) {
+                const pos = getMousePos(e);
+                const distToCenter = Math.sqrt((pos.x - simwon.x)**2 + (pos.y - simwon.y)**2);
+                if (distToCenter > simwon.radius) {
+                    currentDrawingPath.push(pos);
+                    birds.forEach(bird => {
+                        if (bird.state === 'wandering') {
+                            bird.isTargeted = Math.sqrt((pos.x - bird.x)**2 + (pos.y - bird.y)**2) < bird.radius;
+                        } else { bird.isTargeted = false; }
+                    });
+                    for (const tether of activeTethers) {
+                        for (const point of tether.path) {
+                            if (Math.sqrt((pos.x - point.x)**2 + (pos.y - point.y)**2) < 10) {
+                                tether.bird.state = 'wandering'; tether.bird.tether = null;
+                                activeTethers = activeTethers.filter(t => t.id !== tether.id);
+                                isDrawing = false; currentDrawingPath = []; birds.forEach(b => b.isTargeted = false);
+                                return;
+                            }
+                        }
+                    }
+                } else { currentDrawingPath = []; birds.forEach(b => b.isTargeted = false); }
+            }
+        }
+
+        function handleEnd() {
+            if (isDrawing && currentDrawingPath.length > 20) {
+                let skillUsed = false;
+                
+                const intersections = [];
+                for (let i = 0; i < currentDrawingPath.length - 1; i++) {
+                    for (let j = i + 15; j < currentDrawingPath.length - 1; j++) { // j starts further away to avoid immediate self-intersection
+                        const p1 = currentDrawingPath[i];
+                        const p2 = currentDrawingPath[i+1];
+                        const p3 = currentDrawingPath[j];
+                        const p4 = currentDrawingPath[j+1];
+                        const intersectPoint = getLineIntersection(p1, p2, p3, p4);
+                        if (intersectPoint) {
+                            intersections.push({point: intersectPoint, i1: i, i2: j});
+                        }
+                    }
+                }
+
+                if (intersections.length >= 2) {
+                    skillUsed = true;
+                    const firstIntersection = intersections[0];
+                    const loopPolygon = currentDrawingPath.slice(firstIntersection.i1 + 1, firstIntersection.i2 + 1);
+                    loopPolygon.push(firstIntersection.point);
+
+                    effects.push({ type: 'polygon', polygon: loopPolygon, endTime: Date.now() + 500, duration: 500 });
+                    
+                    // NEW: Add text effect for "천라지망"
+                    let centerX = 0, centerY = 0;
+                    loopPolygon.forEach(p => { centerX += p.x; centerY += p.y; });
+                    centerX /= loopPolygon.length;
+                    centerY /= loopPolygon.length;
+                    effects.push({ type: 'text', text: '천라지망', x: centerX, y: centerY, endTime: Date.now() + 1200, duration: 1200 });
+                    
+                    birds.forEach(bird => {
+                        if (bird.state === 'wandering' && pointInPolygon(bird, loopPolygon)) {
+                            bird.state = 'caught';
+                        }
+                    });
+                }
+
+                if (!skillUsed) {
+                    for (const bird of birds) {
+                        if (bird.isTargeted) {
+                            const newTether = { id: nextTetherId++, path: [...currentDrawingPath].reverse(), bird: bird };
+                            activeTethers.push(newTether);
+                            bird.state = 'tethered'; bird.tether = newTether; bird.pathIndex = 0;
+                            break;
+                        }
+                    }
+                }
+            }
+            isDrawing = false; currentDrawingPath = []; birds.forEach(b => b.isTargeted = false);
+        }
+
+        canvas.addEventListener('mousedown', handleStart);
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleStart(e); });
+        canvas.addEventListener('mousemove', handleMove);
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); });
+        window.addEventListener('mouseup', handleEnd);
+        window.addEventListener('touchend', handleEnd);
+        window.addEventListener('resize', resizeCanvas);
+
+        resizeCanvas();
+        setupLevel();
+        gameLoop();
+    </script>
+</body>
+</html>
