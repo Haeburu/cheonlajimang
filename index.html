@@ -113,7 +113,6 @@
                 <p class="text-sm text-gray-400 font-jua">
                     세상에서 가장 달콤한 게임
                 </p>
-                <!-- NEW: Copyright notice -->
                 <p class="text-xs text-gray-500 mt-4 font-jua">
                     © 2025 Podo Studio. All Rights Reserved.
                 </p>
@@ -371,7 +370,10 @@
             if (levelTimer > 0) { levelTimer -= 1 / 60; } else { levelTimer = 0; }
             updateUI();
             if (birds.length > 0 && caughtCount === birds.length) { settleTimer += 1 / 60; } else { settleTimer = 0; }
-            if (settleTimer >= 1.0) { showModal(true); return; }
+            if (settleTimer >= 2.0) { // MODIFIED: Changed to 2 seconds
+                showModal(true); 
+                return; 
+            }
             if (levelTimer <= 0) { showModal(false); return; }
             animationFrameId = requestAnimationFrame(gameLoop);
         }
