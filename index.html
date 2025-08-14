@@ -268,14 +268,36 @@
                     ctx.strokeStyle = `rgba(70, 130, 180, ${timeRatio * 0.8})`;
                     ctx.lineWidth = 5;
                     ctx.stroke();
-                } else if (effect.type === 'text') { // NEW: Text effect rendering
-                    const alpha = Math.sin(progress * Math.PI); // Fade in and out
-                    const fontSize = 40 + Math.sin(progress * Math.PI) * 15; // Pulse effect
+                } else if (effect.type === 'text') {
+                    const alpha = Math.sin(progress * Math.PI);
+                    let fontSize = 40 + Math.sin(progress * Math.PI) * 15;
+                    let color = `rgba(60, 60, 60, ${alpha})`;
+                    
+                    if (effect.style === 'impact') {
+                        fontSize = 60 + Math.sin(progress * Math.PI) * 20;
+                        color = `rgba(218, 165, 32, ${alpha})`;
+                    }
+
                     ctx.font = `bold ${fontSize}px 'Nanum Myeongjo'`;
-                    ctx.fillStyle = `rgba(60, 60, 60, ${alpha})`;
+                    ctx.fillStyle = color;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     ctx.fillText(effect.text, effect.x, effect.y);
+                } else if (effect.type === 'perfectClear') {
+                    const alpha = timeRatio;
+                    const currentRadius = progress * effect.maxRadius;
+                    ctx.beginPath();
+                    ctx.arc(effect.x, effect.y, currentRadius, 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(255, 215, 0, ${alpha * 0.8})`;
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                    if (currentRadius > 40) {
+                        ctx.beginPath();
+                        ctx.arc(effect.x, effect.y, currentRadius - 40, 0, Math.PI * 2);
+                        ctx.strokeStyle = `rgba(255, 215, 0, ${alpha * 0.5})`;
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
                 }
             });
         }
@@ -343,7 +365,7 @@
             if (d === 0) return null;
             const t = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / d;
             const u = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / d;
-            if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+            if (t > 0.01 && t < 0.99 && u > 0.01 && u < 0.99) {
                 return { x: p1.x + t * (p2.x - p1.x), y: p1.y + t * (p2.y - p1.y) };
             }
             return null;
@@ -385,8 +407,8 @@
                 let skillUsed = false;
                 
                 const intersections = [];
-                for (let i = 0; i < currentDrawingPath.length - 1; i++) {
-                    for (let j = i + 15; j < currentDrawingPath.length - 1; j++) { // j starts further away to avoid immediate self-intersection
+                for (let i = 0; i < currentDrawingPath.length - 2; i++) {
+                    for (let j = i + 15; j < currentDrawingPath.length - 2; j++) {
                         const p1 = currentDrawingPath[i];
                         const p2 = currentDrawingPath[i+1];
                         const p3 = currentDrawingPath[j];
@@ -404,20 +426,39 @@
                     const loopPolygon = currentDrawingPath.slice(firstIntersection.i1 + 1, firstIntersection.i2 + 1);
                     loopPolygon.push(firstIntersection.point);
 
-                    effects.push({ type: 'polygon', polygon: loopPolygon, endTime: Date.now() + 500, duration: 500 });
-                    
-                    // NEW: Add text effect for "천라지망"
-                    let centerX = 0, centerY = 0;
-                    loopPolygon.forEach(p => { centerX += p.x; centerY += p.y; });
-                    centerX /= loopPolygon.length;
-                    centerY /= loopPolygon.length;
-                    effects.push({ type: 'text', text: '천라지망', x: centerX, y: centerY, endTime: Date.now() + 1200, duration: 1200 });
-                    
+                    const birdsToCatch = [];
                     birds.forEach(bird => {
                         if (bird.state === 'wandering' && pointInPolygon(bird, loopPolygon)) {
-                            bird.state = 'caught';
+                            birdsToCatch.push(bird);
                         }
                     });
+
+                    if (birdsToCatch.length > 0) {
+                        let centerX = 0, centerY = 0;
+                        loopPolygon.forEach(p => { centerX += p.x; centerY += p.y; });
+                        centerX /= loopPolygon.length;
+                        centerY /= loopPolygon.length;
+
+                        effects.push({ type: 'polygon', polygon: loopPolygon, endTime: Date.now() + 500, duration: 500 });
+                        effects.push({ type: 'text', text: '천라지망', x: centerX, y: centerY - 30, endTime: Date.now() + 1200, duration: 1200 });
+                        
+                        // MODIFIED: "일망타진" condition now checks against the total number of birds.
+                        if (birdsToCatch.length === birds.length) {
+                            effects.push({
+                                type: 'perfectClear',
+                                x: simwon.x, y: simwon.y,
+                                maxRadius: Math.max(canvas.width, canvas.height),
+                                endTime: Date.now() + 1500, duration: 1500
+                            });
+                            effects.push({ 
+                                type: 'text', text: '일망타진', style: 'impact', 
+                                x: centerX, y: centerY + 40, 
+                                endTime: Date.now() + 1500, duration: 1500 
+                            });
+                        }
+                        
+                        birdsToCatch.forEach(bird => bird.state = 'caught');
+                    }
                 }
 
                 if (!skillUsed) {
