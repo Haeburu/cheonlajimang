@@ -30,6 +30,9 @@
             justify-content: center;
             align-items: center;
         }
+        #introModal {
+            display: flex;
+        }
         .modal-content {
             background-color: #fdfaf4;
             padding: 30px;
@@ -38,7 +41,12 @@
             text-align: center;
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
             max-width: 90%;
-            width: 400px;
+            width: 500px;
+        }
+        .modal-content p {
+            margin-top: 1rem;
+            line-height: 1.7;
+            color: #6b5b56;
         }
         .modal-button {
             background-color: #8c7b75;
@@ -77,6 +85,25 @@
         <canvas id="gameCanvas"></canvas>
     </div>
 
+    <div id="introModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-2xl font-bold mb-4 text-[#3a3a3a]">수련을 시작하기 전에</h2>
+            <p>마음의 중심, 심원(心圓)에서부터 손길을 뻗으라.</p>
+            <p>궤적이 참새에 닿을 듯 가까워지면, 인연의 빛이 발하리라.</p>
+            <p>빛이 나는 순간 손을 놓으면, 인연의 실이 참새를 중심으로 이끌 것이다.</p>
+            <button id="startButton" class="modal-button">수련 시작</button>
+        </div>
+    </div>
+    
+    <!-- NEW: Skill Unlock Modal -->
+    <div id="skillModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-2xl font-bold mb-4 text-[#3a3a3a]">새로운 경지</h2>
+            <p>궤적으로 고리를 만들어 두 번 묶어 기운을 닫으면, 그 안의 모든 것을 거두는 비기 '천라지망'이 펼쳐지리라.</p>
+            <button id="skillStartButton" class="modal-button">수련 계속</button>
+        </div>
+    </div>
+
     <div id="modal" class="modal">
         <div class="modal-content">
             <h2 id="modalTitle" class="text-2xl font-bold mb-4 text-[#3a3a3a]">수련 성공</h2>
@@ -95,6 +122,10 @@
         const uiTotalCount = document.getElementById('totalCount');
         const uiTimeLeft = document.getElementById('timeLeft');
         
+        const introModal = document.getElementById('introModal');
+        const startButton = document.getElementById('startButton');
+        const skillModal = document.getElementById('skillModal');
+        const skillStartButton = document.getElementById('skillStartButton');
         const modal = document.getElementById('modal');
         const modalTitle = document.getElementById('modalTitle');
         const modalMessage = document.getElementById('modalMessage');
@@ -123,10 +154,8 @@
                 y: canvas.height / 2,
                 radius: Math.min(canvas.width, canvas.height) * 0.2
             };
-            if (animationFrameId) {
-                if(animationFrameId) cancelAnimationFrame(animationFrameId);
+            if (!animationFrameId) {
                 setupLevel();
-                gameLoop();
             }
         }
 
@@ -314,9 +343,17 @@
                 modalTitle.textContent = '수련 성공'; modalMessage.textContent = `경지 ${level} : 망의 이치를 조금 깨달은 듯합니다.`;
                 modalButton.textContent = '다음 수련으로';
                 modalButton.onclick = () => {
-                    level++; modal.style.display = 'none';
-                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
-                    setupLevel(); gameLoop();
+                    // MODIFIED: Check if it's time to show the skill modal
+                    if (level === 5) {
+                        modal.style.display = 'none';
+                        skillModal.style.display = 'flex';
+                    } else {
+                        level++;
+                        modal.style.display = 'none';
+                        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                        setupLevel();
+                        gameLoop();
+                    }
                 };
             } else {
                 modalTitle.textContent = '수련 실패'; modalMessage.textContent = '시간 안에 모든 참새를 이끌지 못했습니다. 마음을 가다듬고 다시 도전하십시오.';
@@ -324,7 +361,8 @@
                 modalButton.onclick = () => {
                     modal.style.display = 'none';
                     if (animationFrameId) cancelAnimationFrame(animationFrameId);
-                    setupLevel(); gameLoop();
+                    setupLevel();
+                    gameLoop();
                 };
             }
         }
@@ -463,6 +501,21 @@
             isDrawing = false; currentDrawingPath = []; birds.forEach(b => b.isTargeted = false);
         }
 
+        startButton.addEventListener('click', () => {
+            introModal.style.display = 'none';
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            setupLevel();
+            gameLoop();
+        });
+
+        skillStartButton.addEventListener('click', () => {
+            level++; // Increment to level 6
+            skillModal.style.display = 'none';
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            setupLevel();
+            gameLoop();
+        });
+
         canvas.addEventListener('mousedown', handleStart);
         canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleStart(e); });
         canvas.addEventListener('mousemove', handleMove);
@@ -472,8 +525,6 @@
         window.addEventListener('resize', resizeCanvas);
 
         resizeCanvas();
-        setupLevel();
-        gameLoop();
     </script>
 </body>
 </html>
