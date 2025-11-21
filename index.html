@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,21 +8,42 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nanum+Myeongjo&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&family=Noto+Sans+KR:wght@100;300;400;500;700;900&display=swap"
+        rel="stylesheet">
     <style>
-        .font-nanum { font-family: 'Nanum Myeongjo', serif; }
-        .font-jua { font-family: 'Jua', sans-serif; }
         body {
-            font-family: 'Nanum Myeongjo', serif;
+            margin: 0;
             overflow: hidden;
+            background-color: #0a0a0a;
+            font-family: 'Manrope', 'Noto Sans KR', sans-serif;
             touch-action: none;
         }
+
         canvas {
-            background-image: url('https://www.transparenttextures.com/patterns/rice-paper-3.png');
-            background-color: #fdfaf4;
-            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><defs><radialGradient id="softBrush" cx="0.5" cy="0.5" r="0.5"><stop offset="0%" stop-color="rgba(90, 90, 90, 0.8)" /><stop offset="100%" stop-color="rgba(90, 90, 90, 0)" /></radialGradient></defs><circle cx="16" cy="16" r="10" fill="url(%23softBrush)" /></svg>') 16 16, auto;
+            background-color: #0a0a0a;
             display: block;
         }
+
+        body {
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="6" fill="rgba(255,255,255,0.8)" stroke="rgba(255,255,255,0.4)" stroke-width="2" /></svg>') 16 16, auto;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .glass-panel {
+            background: rgba(20, 20, 20, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
         .modal {
             display: none;
             position: fixed;
@@ -30,126 +52,169 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.5);
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
             justify-content: center;
             align-items: center;
         }
+
         #introModal {
             display: flex;
-            background-color: #111827; /* bg-gray-900 */
+            background-color: #0a0a0a;
         }
+
         .modal-content {
-            background-color: #fdfaf4;
-            padding: 30px;
-            border: 2px solid #8c7b75;
-            border-radius: 15px;
+            background-color: #171717;
+            padding: 40px;
+            border: 1px solid #333;
+            border-radius: 24px;
             text-align: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
             max-width: 90%;
             width: 500px;
+            color: #d4d4d4;
         }
+
+        .modal-content h2 {
+            color: #fff;
+            font-family: 'Manrope', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
         .modal-content p {
-            margin-top: 1rem;
+            margin-top: 1.5rem;
             line-height: 1.7;
-            color: #6b5b56;
+            color: #a3a3a3;
+            font-weight: 300;
         }
+
         .modal-button {
-            background-color: #8c7b75;
-            color: #fdfaf4;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
+            background: transparent;
+            color: #fff;
+            padding: 12px 32px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 9999px;
             cursor: pointer;
             font-size: 16px;
-            margin-top: 20px;
-            transition: background-color 0.3s;
-            margin-left: 5px;
-            margin-right: 5px;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+            font-family: 'Manrope', sans-serif;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
+
         .modal-button:hover {
-            background-color: #6b5b56;
-        }
-        .modal-button:disabled {
-            background-color: #a0938e;
-            cursor: not-allowed;
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
         }
     </style>
 </head>
-<body class="bg-gray-900 flex flex-col justify-center items-center h-screen m-0 p-0">
 
-    <div id="ui" class="w-full max-w-4xl p-4 text-center text-white bg-[#3a3a3a] rounded-b-lg" style="display: none;">
-        <h1 class="text-2xl md:text-3xl font-bold text-[#e0dcd1]">천라지망 (天羅地網)</h1>
-        <div class="grid grid-cols-3 md:grid-cols-3 gap-2 mt-2 text-sm md:text-base text-[#c7c0b4]">
-            <p>수련 단계: <span id="level">1</span></p>
-            <p>포획된 참새: <span id="caughtCount">0</span> / <span id="totalCount">1</span></p>
-            <p class="text-yellow-300">남은 시간: <span id="timeLeft">60.0</span></p>
-            <p>누적 참새: <span id="totalCaughtStat">0</span></p>
-            <p class="text-blue-300">천라지망: <span id="skillCount">0</span></p>
-            <p class="text-amber-300">일망타진: <span id="perfectCount">0</span></p>
+<body
+    class="bg-neutral-950 flex flex-col justify-center items-center h-screen m-0 p-0 text-white selection:bg-white selection:text-black">
+
+    <div id="ui" class="fixed top-0 left-0 w-full p-6 flex justify-between items-start pointer-events-none z-10"
+        style="display: none;">
+        <div class="flex flex-col items-start gap-2">
+            <h1 id="gameTitle" class="text-3xl font-bold font-manrope tracking-tighter text-white drop-shadow-lg">천라지망
+            </h1>
+            <div class="glass px-4 py-2 rounded-full flex items-center gap-4 text-sm font-manrope text-neutral-300">
+                <span><span id="labelLevel">레벨</span> <span id="level" class="text-white font-bold">1</span></span>
+                <span class="w-px h-3 bg-white/20"></span>
+                <span><span id="labelTime">시간</span> <span id="timeLeft"
+                        class="text-white font-bold tabular-nums">60.0</span></span>
+            </div>
+        </div>
+
+        <div class="flex flex-col items-end gap-2">
+            <div class="glass px-4 py-2 rounded-full flex items-center gap-4 text-sm font-manrope text-neutral-300">
+                <span><span id="labelCaught">포획</span> <span id="caughtCount" class="text-white font-bold">0</span> /
+                    <span id="totalCount">1</span></span>
+            </div>
+            <div
+                class="glass px-4 py-2 rounded-lg flex flex-col items-end gap-1 text-xs font-manrope text-neutral-400 mt-2">
+                <p><span id="labelTotal">총합</span>: <span id="totalCaughtStat" class="text-white">0</span></p>
+                <p><span id="labelSkill">천라지망</span>: <span id="skillCount" class="text-blue-400">0</span></p>
+                <p><span id="labelPerfect">일망타진</span>: <span id="perfectCount" class="text-yellow-400">0</span></p>
+            </div>
         </div>
     </div>
 
-    <div id="gameContainer" class="w-full max-w-4xl aspect-video bg-white shadow-2xl" style="display: none;">
+    <div id="gameContainer" class="w-full h-full absolute top-0 left-0">
         <canvas id="gameCanvas"></canvas>
     </div>
 
-    <div id="introModal" class="modal">
-        <div class="flex flex-col justify-center items-center h-screen text-center p-4 w-full">
-            <div class="flex-grow flex flex-col justify-center items-center">
-                <h1 class="text-6xl font-bold text-gray-200 mb-4 font-nanum" style="text-shadow: 2px 2px 4px #000;">
+    <div id="introModal" class="modal" style="display: flex;">
+        <div class="flex flex-col justify-center items-center h-screen text-center p-4 w-full relative overflow-hidden">
+            <div
+                class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-tr from-purple-900/20 to-blue-900/20 rounded-full blur-3xl -z-10">
+            </div>
+
+            <div class="flex-grow flex flex-col justify-center items-center z-10">
+                <!-- Language Toggle -->
+                <div class="absolute top-8 right-8 pointer-events-auto">
+                    <button id="langToggle" type="button"
+                        class="glass px-4 py-2 rounded-full text-sm font-manrope text-white hover:bg-white/10 transition-all duration-300 border border-white/20 hover:border-white/40">
+                        <span id="langText">English</span>
+                    </button>
+                </div>
+
+                <h1 id="introTitle"
+                    class="text-7xl md:text-9xl font-black text-white mb-6 font-manrope tracking-tighter"
+                    style="text-shadow: 0 0 40px rgba(255,255,255,0.1);">
                     천라지망
                 </h1>
-                <p class="text-xl text-gray-400 mb-12 font-nanum">
-                    손끝으로 그리는 구도의 길
+                <p id="introSubtitle"
+                    class="text-xl md:text-2xl text-neutral-400 mb-16 font-noto font-light tracking-wide">
+                    천라지망: 손끝으로 그리는 구도의 길
                 </p>
-                <button id="startButton" class="bg-[#8c7b75] hover:bg-[#6b5b56] text-white font-bold py-3 px-8 rounded-full text-2xl shadow-lg transform hover:scale-105 transition-transform duration-300">
-                    수련 시작
+                <button id="startButton" type="button"
+                    class="group relative px-12 py-4 bg-white text-black rounded-full text-lg font-bold font-manrope tracking-wider uppercase hover:scale-105 transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_40px_rgba(255,255,255,0.5)]">
+                    여정 시작
+                    <div
+                        class="absolute inset-0 rounded-full border border-white/50 scale-110 opacity-0 group-hover:opacity-100 group-hover:scale-125 transition-all duration-500">
+                    </div>
                 </button>
             </div>
-            <div class="pb-8">
-                <div id="logo-container" class="mb-2 w-24 h-24 mx-auto">
-                    <!-- JavaScript will insert the SVG logo here -->
-                </div>
-                <h2 class="text-2xl font-bold text-purple-300 font-jua" style="text-shadow: 1px 1px 2px #000;">
-                    포도 스튜디오
-                </h2>
-                <p class="text-sm text-gray-400 font-jua">
-                    세상에서 가장 달콤한 게임
-                </p>
-				<a href="https://podo-studio.github.io/home/" target="_blank" class="text-sm text-blue-400 hover:text-blue-300 underline font-jua mt-2 inline-block">
-                    홈페이지 바로가기
-                </a>
-                <p class="text-xs text-gray-500 mt-4 font-jua">
-                    © 2025 Podo Studio. All Rights Reserved.
-                </p>
+
+            <div class="pb-12 z-10 flex flex-col items-center">
+                <div id="logo-container"
+                    class="mb-4 w-16 h-16 opacity-80 grayscale hover:grayscale-0 transition-all duration-500"></div>
+                <h2 class="text-sm font-bold text-neutral-500 font-manrope tracking-widest uppercase">Podo Studio</h2>
+                <a href="https://podo-studio.github.io/home/" target="_blank"
+                    class="text-xs text-neutral-600 hover:text-white transition-colors mt-2 font-manrope">podo-studio.github.io</a>
             </div>
         </div>
     </div>
-    
+
     <div id="manualModal" class="modal">
-        <div class="modal-content">
-            <h2 class="text-2xl font-bold mb-4 text-[#3a3a3a]">수련의 기본</h2>
-            <p>마음의 중심, 심원(心圓)에서부터 손길을 뻗으라.</p>
-            <p>궤적이 참새에 닿을 듯 가까워지면, 인연의 빛이 발하리라.</p>
-            <p>빛이 나는 순간 손을 놓으면, 인연의 실이 참새를 중심으로 이끌 것이다.</p>
-            <button id="manualStartButton" class="modal-button">알겠습니다</button>
+        <div class="modal-content glass-panel">
+            <h2 id="manualTitle" class="text-2xl font-bold mb-6">기본 수련</h2>
+            <p id="manualText1" class="font-noto">마음의 중심, 심원(心圓)에서부터 손길을 뻗으라.</p>
+            <p id="manualText2" class="font-noto">궤적이 참새에 닿을 듯 가까워지면, 인연의 빛이 발하리라.</p>
+            <p id="manualText3" class="font-noto">빛이 나는 순간 손을 놓으면, 인연의 실이 참새를 중심으로 이끌 것이다.</p>
+            <button id="manualStartButton" type="button" class="modal-button">이해했습니다</button>
         </div>
     </div>
 
     <div id="skillModal" class="modal">
-        <div class="modal-content">
-            <h2 class="text-2xl font-bold mb-4 text-[#3a3a3a]">새로운 경지</h2>
-            <p>궤적으로 고리를 만들어 두 번 묶어 기운을 닫으면, 그 안의 모든 것을 거두는 비기 '천라지망'이 펼쳐지리라.</p>
-            <button id="skillStartButton" class="modal-button">수련 계속</button>
+        <div class="modal-content glass-panel">
+            <h2 id="skillTitle" class="text-2xl font-bold mb-6">새로운 경지</h2>
+            <p id="skillText" class="font-noto">궤적으로 고리를 만들어 두 번 묶어 기운을 닫으면, 그 안의 모든 것을 거두는 비기 '천라지망'이 펼쳐지리라.</p>
+            <button id="skillStartButton" type="button" class="modal-button">계속하기</button>
         </div>
     </div>
 
     <div id="modal" class="modal">
-        <div class="modal-content">
-            <h2 id="modalTitle" class="text-2xl font-bold mb-4 text-[#3a3a3a]">수련 성공</h2>
-            <p id="modalMessage" class="text-base text-[#6b5b56]">망의 이치를 조금 깨달은 듯합니다.</p>
+        <div class="modal-content glass-panel">
+            <h2 id="modalTitle" class="text-2xl font-bold mb-6">성공</h2>
+            <p id="modalMessage" class="text-base font-noto">망의 이치를 조금 깨달은 듯합니다.</p>
             <div id="modalButtons">
-                 <button id="modalButton" class="modal-button">다음 수련으로</button>
+                <button id="modalButton" type="button" class="modal-button">다음 레벨</button>
             </div>
         </div>
     </div>
@@ -166,7 +231,7 @@
         const uiSkillCount = document.getElementById('skillCount');
         const uiPerfectCount = document.getElementById('perfectCount');
         const uiTotalCaughtStat = document.getElementById('totalCaughtStat');
-        
+
         const introModal = document.getElementById('introModal');
         const startButton = document.getElementById('startButton');
         const manualModal = document.getElementById('manualModal');
@@ -178,12 +243,114 @@
         const modalMessage = document.getElementById('modalMessage');
         const modalButton = document.getElementById('modalButton');
 
+        // Language system
+        let currentLang = localStorage.getItem('cheonlajimangLang') || 'ko';
+
+        const translations = {
+            ko: {
+                langButton: 'English',
+                gameTitle: '천라지망',
+                introTitle: '천라지망',
+                introSubtitle: '천라지망: 손끝으로 그리는 구도의 길',
+                startButton: '여정 시작',
+                labelLevel: '레벨',
+                labelTime: '시간',
+                labelCaught: '포획',
+                labelTotal: '총합',
+                labelSkill: '천라지망',
+                labelPerfect: '일망타진',
+                manualTitle: '기본 수련',
+                manualText1: '마음의 중심, 심원(心圓)에서부터 손길을 뻗으라.',
+                manualText2: '궤적이 참새에 닿을 듯 가까워지면, 인연의 빛이 발하리라.',
+                manualText3: '빛이 나는 순간 손을 놓으면, 인연의 실이 참새를 중심으로 이끌 것이다.',
+                manualButton: '이해했습니다',
+                skillTitle: '새로운 경지',
+                skillText: '궤적으로 고리를 만들어 두 번 묶어 기운을 닫으면, 그 안의 모든 것을 거두는 비기 \'천라지망\'이 펼쳐지리라.',
+                skillButton: '계속하기',
+                successTitle: '성공',
+                successMessage: (level) => `레벨 ${level}: 망의 이치를 조금 깨달은 듯합니다.`,
+                failedTitle: '실패',
+                failedMessage: '시간이 다했습니다. 마음을 가다듬고 다시 시도하세요.',
+                nextLevel: '다음 레벨',
+                tryAgain: '다시 시도',
+                cheonlajimang: '천라지망',
+                ilmangtajin: '일망타진'
+            },
+            en: {
+                langButton: '한국어',
+                gameTitle: 'CHEONLAJIMANG',
+                introTitle: 'CHEONLAJIMANG',
+                introSubtitle: 'Cheonlajimang: The Path of Enlightenment at Your Fingertips',
+                startButton: 'Start Journey',
+                labelLevel: 'LEVEL',
+                labelTime: 'TIME',
+                labelCaught: 'CAUGHT',
+                labelTotal: 'TOTAL',
+                labelSkill: 'CHEONLAJIMANG',
+                labelPerfect: 'PERFECT',
+                manualTitle: 'Basic Training',
+                manualText1: 'Extend your touch from the center of your heart, the Simwon (心圓).',
+                manualText2: 'When your path draws near the sparrow, the light of connection will shine.',
+                manualText3: 'Release at the moment of light, and the thread of fate will guide the sparrow to the center.',
+                manualButton: 'I Understand',
+                skillTitle: 'New Horizon',
+                skillText: 'Create a loop with your path and bind it twice to close the energy. The secret technique \'Cheonlajimang\' will unfold, capturing all within.',
+                skillButton: 'Continue',
+                successTitle: 'Success',
+                successMessage: (level) => `Level ${level}: You have grasped the essence of the net.`,
+                failedTitle: 'Failed',
+                failedMessage: 'Time is up. Calm your mind and try again.',
+                nextLevel: 'Next Level',
+                tryAgain: 'Try Again',
+                cheonlajimang: 'Cheonlajimang',
+                ilmangtajin: 'Perfect Clear'
+            }
+        };
+
+        function updateLanguage() {
+            const t = translations[currentLang];
+
+            // Language toggle
+            document.getElementById('langText').textContent = t.langButton;
+
+            // Main UI labels
+            document.getElementById('gameTitle').textContent = t.gameTitle;
+            document.getElementById('introTitle').textContent = t.introTitle;
+            document.getElementById('introSubtitle').textContent = t.introSubtitle;
+            document.getElementById('labelLevel').textContent = t.labelLevel;
+            document.getElementById('labelTime').textContent = t.labelTime;
+            document.getElementById('labelCaught').textContent = t.labelCaught;
+            document.getElementById('labelTotal').textContent = t.labelTotal;
+            document.getElementById('labelSkill').textContent = t.labelSkill;
+            document.getElementById('labelPerfect').textContent = t.labelPerfect;
+
+            // Buttons and modals
+            startButton.textContent = t.startButton;
+            document.getElementById('manualTitle').textContent = t.manualTitle;
+            document.getElementById('manualText1').textContent = t.manualText1;
+            document.getElementById('manualText2').textContent = t.manualText2;
+            document.getElementById('manualText3').textContent = t.manualText3;
+            manualStartButton.textContent = t.manualButton;
+            document.getElementById('skillTitle').textContent = t.skillTitle;
+            document.getElementById('skillText').textContent = t.skillText;
+            skillStartButton.textContent = t.skillButton;
+
+            localStorage.setItem('cheonlajimangLang', currentLang);
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'ko' ? 'en' : 'ko';
+            updateLanguage();
+        }
+
+        document.getElementById('langToggle').addEventListener('click', toggleLanguage);
+
         let birds = [];
         let level = 1;
         let levelTimer = 60;
         let animationFrameId;
         let settleTimer = 0;
-        
+
         let cheonlajimangCount = 0;
         let ilmangtajinCount = 0;
         let totalCaughtCount = 0;
@@ -198,8 +365,8 @@
 
         function resizeCanvas() {
             const container = gameContainer;
-            canvas.width = container.clientWidth;
-            canvas.height = container.clientHeight;
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
             simwon = {
                 x: canvas.width / 2,
                 y: canvas.height / 2,
@@ -211,7 +378,7 @@
         }
 
         class Bird {
-             constructor(x, y, level) {
+            constructor(x, y, level) {
                 this.x = x; this.y = y; this.radius = Math.max(8, 12 - level * 0.1);
                 const speedMultiplier = 1 + level * 0.1;
                 this.vx = (Math.random() - 0.5) * 2 * speedMultiplier;
@@ -223,20 +390,36 @@
             draw() {
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+
                 if (this.isTargeted) {
-                    ctx.fillStyle = 'rgba(144, 238, 144, 0.9)'; ctx.strokeStyle = 'rgba(50, 205, 50, 1)';
+                    ctx.fillStyle = '#4ade80';
+                    ctx.strokeStyle = '#22c55e';
+                    ctx.shadowColor = '#4ade80';
+                    ctx.shadowBlur = 10;
                 } else if (this.state === 'tethered') {
-                    ctx.fillStyle = 'rgba(255, 215, 0, 0.8)'; ctx.strokeStyle = 'rgba(218, 165, 32, 1)';
+                    ctx.fillStyle = '#facc15';
+                    ctx.strokeStyle = '#eab308';
+                    ctx.shadowColor = '#facc15';
+                    ctx.shadowBlur = 5;
                 } else if (this.state === 'caught') {
-                    ctx.fillStyle = 'rgba(135, 206, 235, 0.8)'; ctx.strokeStyle = 'rgba(70, 130, 180, 1)';
+                    ctx.fillStyle = '#60a5fa';
+                    ctx.strokeStyle = '#3b82f6';
+                    ctx.shadowColor = '#60a5fa';
+                    ctx.shadowBlur = 5;
                 } else {
-                    ctx.fillStyle = 'rgba(60, 60, 60, 0.8)'; ctx.strokeStyle = 'rgba(0, 0, 0, 1)';
+                    ctx.fillStyle = '#e5e5e5';
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.shadowBlur = 0;
                 }
-                ctx.fill(); ctx.lineWidth = 2; ctx.stroke();
+
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.shadowBlur = 0;
             }
 
             update() {
-                switch(this.state) {
+                switch (this.state) {
                     case 'wandering':
                         this.wanderAngle += (Math.random() - 0.5) * 0.5;
                         this.vx += Math.cos(this.wanderAngle) * 0.1; this.vy += Math.sin(this.wanderAngle) * 0.1;
@@ -245,7 +428,7 @@
                         else if (this.x > canvas.width - this.radius) { this.vx *= -1; this.x = canvas.width - this.radius; }
                         if (this.y < this.radius) { this.vy *= -1; this.y = this.radius; }
                         else if (this.y > canvas.height - this.radius) { this.vy *= -1; this.y = canvas.height - this.radius; }
-                        const speed = Math.sqrt(this.vx**2 + this.vy**2);
+                        const speed = Math.sqrt(this.vx ** 2 + this.vy ** 2);
                         const maxSpeed = 1.5 + level * 0.15;
                         if (speed > maxSpeed && speed > 0) {
                             this.vx = (this.vx / speed) * maxSpeed; this.vy = (this.vy / speed) * maxSpeed;
@@ -255,7 +438,7 @@
                         if (!this.tether || !this.tether.path || this.tether.path.length === 0) { this.state = 'wandering'; break; }
                         const targetPoint = this.tether.path[this.pathIndex];
                         const dx = targetPoint.x - this.x; const dy = targetPoint.y - this.y;
-                        const dist = Math.sqrt(dx**2 + dy**2);
+                        const dist = Math.sqrt(dx ** 2 + dy ** 2);
                         const pullSpeed = 2.5 + level * 0.1;
                         if (dist < pullSpeed) {
                             this.pathIndex--;
@@ -271,9 +454,9 @@
                         }
                         break;
                     case 'caught':
-                        const distToCenter = Math.sqrt((this.x - simwon.x)**2 + (this.y - simwon.y)**2);
+                        const distToCenter = Math.sqrt((this.x - simwon.x) ** 2 + (this.y - simwon.y) ** 2);
                         if (distToCenter > 1) {
-                           this.x += (simwon.x - this.x) * 0.1; this.y += (simwon.y - this.y) * 0.1;
+                            this.x += (simwon.x - this.x) * 0.1; this.y += (simwon.y - this.y) * 0.1;
                         }
                         break;
                 }
@@ -309,27 +492,41 @@
         function drawSimwon() {
             ctx.beginPath();
             ctx.arc(simwon.x, simwon.y, simwon.radius, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(140, 123, 117, 0.2)'; ctx.fillStyle = 'rgba(135, 206, 235, 0.05)';
-            ctx.fill(); ctx.lineWidth = 2; ctx.stroke();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.2)';
+            ctx.shadowBlur = 20;
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
         }
-        
+
         function drawPaths() {
-            const drawSinglePath = (path, color) => {
-                 if (path.length < 1) return;
+            const drawSinglePath = (path, color, glow) => {
+                if (path.length < 1) return;
                 ctx.beginPath();
                 const firstPoint = path[0];
                 const angle = Math.atan2(firstPoint.y - simwon.y, firstPoint.x - simwon.x);
                 const startX = simwon.x + Math.cos(angle) * simwon.radius; const startY = simwon.y + Math.sin(angle) * simwon.radius;
                 ctx.moveTo(startX, startY);
                 for (let i = 0; i < path.length; i++) { ctx.lineTo(path[i].x, path[i].y); }
-                ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.stroke();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 3;
+                if (glow) {
+                    ctx.shadowColor = color;
+                    ctx.shadowBlur = 10;
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
             }
-            activeTethers.forEach(tether => { if (tether.path) drawSinglePath(tether.path, 'rgba(218, 165, 32, 0.7)'); });
-            if (isDrawing) { drawSinglePath(currentDrawingPath, 'rgba(0, 0, 0, 0.5)'); }
+            activeTethers.forEach(tether => { if (tether.path) drawSinglePath(tether.path, '#facc15', true); });
+            if (isDrawing) { drawSinglePath(currentDrawingPath, 'rgba(255, 255, 255, 0.5)', false); }
         }
 
         function drawEffects() {
             const now = Date.now();
+            const t = translations[currentLang];
             effects = effects.filter(effect => now < effect.endTime);
             effects.forEach(effect => {
                 const timeRatio = (effect.endTime - now) / effect.duration;
@@ -337,45 +534,57 @@
                 if (effect.type === 'polygon') {
                     ctx.beginPath();
                     ctx.moveTo(effect.polygon[0].x, effect.polygon[0].y);
-                    for(let i = 1; i < effect.polygon.length; i++) {
+                    for (let i = 1; i < effect.polygon.length; i++) {
                         ctx.lineTo(effect.polygon[i].x, effect.polygon[i].y);
                     }
                     ctx.closePath();
-                    ctx.fillStyle = `rgba(135, 206, 235, ${timeRatio * 0.4})`;
+                    ctx.fillStyle = `rgba(96, 165, 250, ${timeRatio * 0.3})`;
                     ctx.fill();
-                    ctx.strokeStyle = `rgba(70, 130, 180, ${timeRatio * 0.8})`;
+                    ctx.strokeStyle = `rgba(147, 197, 253, ${timeRatio * 0.8})`;
                     ctx.lineWidth = 5;
+                    ctx.shadowColor = '#60a5fa';
+                    ctx.shadowBlur = 15;
                     ctx.stroke();
+                    ctx.shadowBlur = 0;
                 } else if (effect.type === 'text') {
                     const alpha = Math.sin(progress * Math.PI);
                     let fontSize = 40 + Math.sin(progress * Math.PI) * 15;
-                    let color = `rgba(60, 60, 60, ${alpha})`;
-                    
+                    let color = `rgba(229, 229, 229, ${alpha})`;
+
                     if (effect.style === 'impact') {
                         fontSize = 60 + Math.sin(progress * Math.PI) * 20;
-                        color = `rgba(218, 165, 32, ${alpha})`;
+                        color = `rgba(250, 204, 21, ${alpha})`;
                     }
 
-                    ctx.font = `bold ${fontSize}px 'Nanum Myeongjo'`;
+                    ctx.font = `bold ${fontSize}px 'Manrope'`;
                     ctx.fillStyle = color;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(effect.text, effect.x, effect.y);
+                    ctx.shadowColor = color;
+                    ctx.shadowBlur = 10;
+                    // Use translated text
+                    const displayText = effect.text === 'CHEONLAJIMANG' ? t.cheonlajimang :
+                        effect.text === 'ILMANGTAJIN' ? t.ilmangtajin : effect.text;
+                    ctx.fillText(displayText, effect.x, effect.y);
+                    ctx.shadowBlur = 0;
                 } else if (effect.type === 'perfectClear') {
                     const alpha = timeRatio;
                     const currentRadius = progress * effect.maxRadius;
                     ctx.beginPath();
                     ctx.arc(effect.x, effect.y, currentRadius, 0, Math.PI * 2);
-                    ctx.strokeStyle = `rgba(255, 215, 0, ${alpha * 0.8})`;
+                    ctx.strokeStyle = `rgba(250, 204, 21, ${alpha * 0.8})`;
                     ctx.lineWidth = 3;
+                    ctx.shadowColor = '#facc15';
+                    ctx.shadowBlur = 20;
                     ctx.stroke();
                     if (currentRadius > 40) {
                         ctx.beginPath();
                         ctx.arc(effect.x, effect.y, currentRadius - 40, 0, Math.PI * 2);
-                        ctx.strokeStyle = `rgba(255, 215, 0, ${alpha * 0.5})`;
+                        ctx.strokeStyle = `rgba(250, 204, 21, ${alpha * 0.5})`;
                         ctx.lineWidth = 2;
                         ctx.stroke();
                     }
+                    ctx.shadowBlur = 0;
                 }
             });
         }
@@ -394,13 +603,15 @@
         }
 
         function showModal(isSuccess) {
+            const t = translations[currentLang];
             modal.style.display = 'flex';
             if (isSuccess) {
-                modalTitle.textContent = '수련 성공'; modalMessage.textContent = `경지 ${level} : 망의 이치를 조금 깨달은 듯합니다.`;
-                modalButton.textContent = '다음 수련으로';
-                modalButton.onclick = () => {
-                    // MODIFIED: Skill modal now shows up after level 2
-                    if (level === 2) {
+                modalTitle.textContent = t.successTitle;
+                modalMessage.textContent = t.successMessage(level);
+                modalButton.textContent = t.nextLevel;
+                modalButton.onclick = (e) => {
+                    e.preventDefault();
+                    if (level === 1) {
                         modal.style.display = 'none';
                         skillModal.style.display = 'flex';
                     } else {
@@ -412,9 +623,11 @@
                     }
                 };
             } else {
-                modalTitle.textContent = '수련 실패'; modalMessage.textContent = '시간 안에 모든 참새를 이끌지 못했습니다. 마음을 가다듬고 다시 도전하십시오.';
-                modalButton.textContent = '다시 도전';
-                modalButton.onclick = () => {
+                modalTitle.textContent = t.failedTitle;
+                modalMessage.textContent = t.failedMessage;
+                modalButton.textContent = t.tryAgain;
+                modalButton.onclick = (e) => {
+                    e.preventDefault();
                     modal.style.display = 'none';
                     if (animationFrameId) cancelAnimationFrame(animationFrameId);
                     setupLevel();
@@ -422,7 +635,7 @@
                 };
             }
         }
-        
+
         function getMousePos(evt) {
             const rect = canvas.getBoundingClientRect();
             const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
@@ -442,7 +655,7 @@
             }
             return inside;
         }
-        
+
         function getLineIntersection(p1, p2, p3, p4) {
             const d = (p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y);
             if (d === 0) return null;
@@ -456,24 +669,24 @@
 
         function handleStart(e) {
             const pos = getMousePos(e);
-            const distToCenter = Math.sqrt((pos.x - simwon.x)**2 + (pos.y - simwon.y)**2);
+            const distToCenter = Math.sqrt((pos.x - simwon.x) ** 2 + (pos.y - simwon.y) ** 2);
             if (distToCenter < simwon.radius) { isDrawing = true; currentDrawingPath = []; }
         }
 
         function handleMove(e) {
             if (isDrawing) {
                 const pos = getMousePos(e);
-                const distToCenter = Math.sqrt((pos.x - simwon.x)**2 + (pos.y - simwon.y)**2);
+                const distToCenter = Math.sqrt((pos.x - simwon.x) ** 2 + (pos.y - simwon.y) ** 2);
                 if (distToCenter > simwon.radius) {
                     currentDrawingPath.push(pos);
                     birds.forEach(bird => {
                         if (bird.state === 'wandering') {
-                            bird.isTargeted = Math.sqrt((pos.x - bird.x)**2 + (pos.y - bird.y)**2) < bird.radius;
+                            bird.isTargeted = Math.sqrt((pos.x - bird.x) ** 2 + (pos.y - bird.y) ** 2) < bird.radius;
                         } else { bird.isTargeted = false; }
                     });
                     for (const tether of activeTethers) {
                         for (const point of tether.path) {
-                            if (Math.sqrt((pos.x - point.x)**2 + (pos.y - point.y)**2) < 10) {
+                            if (Math.sqrt((pos.x - point.x) ** 2 + (pos.y - point.y) ** 2) < 10) {
                                 tether.bird.state = 'wandering'; tether.bird.tether = null;
                                 activeTethers = activeTethers.filter(t => t.id !== tether.id);
                                 isDrawing = false; currentDrawingPath = []; birds.forEach(b => b.isTargeted = false);
@@ -488,17 +701,17 @@
         function handleEnd() {
             if (isDrawing && currentDrawingPath.length > 20) {
                 let skillUsed = false;
-                
+
                 const intersections = [];
                 for (let i = 0; i < currentDrawingPath.length - 2; i++) {
                     for (let j = i + 15; j < currentDrawingPath.length - 2; j++) {
                         const p1 = currentDrawingPath[i];
-                        const p2 = currentDrawingPath[i+1];
+                        const p2 = currentDrawingPath[i + 1];
                         const p3 = currentDrawingPath[j];
-                        const p4 = currentDrawingPath[j+1];
+                        const p4 = currentDrawingPath[j + 1];
                         const intersectPoint = getLineIntersection(p1, p2, p3, p4);
                         if (intersectPoint) {
-                            intersections.push({point: intersectPoint, i1: i, i2: j});
+                            intersections.push({ point: intersectPoint, i1: i, i2: j });
                         }
                     }
                 }
@@ -525,8 +738,8 @@
                         centerY /= loopPolygon.length;
 
                         effects.push({ type: 'polygon', polygon: loopPolygon, endTime: Date.now() + 500, duration: 500 });
-                        effects.push({ type: 'text', text: '천라지망', x: centerX, y: centerY - 30, endTime: Date.now() + 1200, duration: 1200 });
-                        
+                        effects.push({ type: 'text', text: 'CHEONLAJIMANG', x: centerX, y: centerY - 30, endTime: Date.now() + 1200, duration: 1200 });
+
                         if (birdsToCatch.length === birds.length) {
                             ilmangtajinCount++;
                             effects.push({
@@ -535,13 +748,13 @@
                                 maxRadius: Math.max(canvas.width, canvas.height),
                                 endTime: Date.now() + 1500, duration: 1500
                             });
-                            effects.push({ 
-                                type: 'text', text: '일망타진', style: 'impact', 
-                                x: centerX, y: centerY + 40, 
-                                endTime: Date.now() + 1500, duration: 1500 
+                            effects.push({
+                                type: 'text', text: 'ILMANGTAJIN', style: 'impact',
+                                x: centerX, y: centerY + 40,
+                                endTime: Date.now() + 1500, duration: 1500
                             });
                         }
-                        
+
                         birdsToCatch.forEach(bird => bird.state = 'caught');
                         saveStats();
                     }
@@ -604,7 +817,7 @@
             logoContainer.innerHTML = '';
             logoContainer.appendChild(svg);
         }
-        
+
         function saveStats() {
             localStorage.setItem('cheonlajimangCount', cheonlajimangCount);
             localStorage.setItem('ilmangtajinCount', ilmangtajinCount);
@@ -617,14 +830,16 @@
             totalCaughtCount = parseInt(localStorage.getItem('totalCaughtCount')) || 0;
         }
 
-        startButton.addEventListener('click', () => {
+        startButton.addEventListener('click', (e) => {
+            e.preventDefault();
             introModal.style.display = 'none';
             manualModal.style.display = 'flex';
         });
 
-        manualStartButton.addEventListener('click', () => {
+        manualStartButton.addEventListener('click', (e) => {
+            e.preventDefault();
             manualModal.style.display = 'none';
-            ui.style.display = 'block';
+            ui.style.display = 'flex';
             gameContainer.style.display = 'block';
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
             resizeCanvas();
@@ -633,7 +848,8 @@
             gameLoop();
         });
 
-        skillStartButton.addEventListener('click', () => {
+        skillStartButton.addEventListener('click', (e) => {
+            e.preventDefault();
             level++;
             skillModal.style.display = 'none';
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
@@ -649,8 +865,11 @@
         window.addEventListener('touchend', handleEnd);
         window.addEventListener('resize', resizeCanvas);
 
+        // Initialize
+        updateLanguage();
         drawGrapeLogo();
         resizeCanvas();
     </script>
 </body>
+
 </html>
